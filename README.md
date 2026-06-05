@@ -24,10 +24,41 @@ EtiquetasCaducidad/
 | Librería | Versión mínima | Dónde instalar |
 |----------|---------------|----------------|
 | **TFT_eSPI** (Bodmer) | 2.5.43 | Arduino Library Manager / `lib_deps` PlatformIO |
+| **WiFiManager** (tzapu/tablatronix) | 2.0.17 | Arduino Library Manager → buscar "WiFiManager by tzapu" |
 | **ESP32 Arduino board package** (Espressif) | 2.0.14 | Boards Manager → "esp32 by Espressif" |
-| WiFi.h, WebServer.h | — | Incluidas en el paquete ESP32 anterior |
+| WiFi.h, WebServer.h, Preferences.h | — | Incluidas en el paquete ESP32 anterior |
 
-> No se requiere ArduinoJson ni ninguna otra librería de terceros.
+> No se requiere ArduinoJson.
+
+---
+
+## 2. Configuración WiFi (portal automático)
+
+Las credenciales WiFi **no están hardcodeadas**. El ESP32 usa WiFiManager:
+
+### Primera vez (o tras reset)
+
+1. Al arrancar sin red configurada, el ESP32 levanta un AP propio:
+   - **Nombre:** `RelayEtiquetas`
+   - **Contraseña:** ninguna (AP abierto por defecto)
+2. La pantalla del CYD muestra la instrucción de conexión.
+3. Desde el móvil o portátil, conéctate a esa red WiFi.
+4. Abre **http://192.168.4.1** en el navegador.
+5. Pulsa **Configure WiFi**, elige tu red, introduce la contraseña.
+6. En la misma pantalla aparecen dos campos extra:
+   - **IP de la impresora térmica** (por defecto `192.168.1.100`)
+   - **Puerto** (por defecto `9100`)
+7. Pulsa **Save**. El ESP32 reinicia y conecta a tu red.
+
+### Cambiar de red más adelante
+
+Mantén pulsado el botón **BOOT** (GPIO 0) del ESP32 durante **3 segundos**
+en el arranque. El ESP32 borra las credenciales y vuelve al portal.
+
+### Cambiar solo la IP de la impresora
+
+Sin reflashear ni tocar la red WiFi: pulsa BOOT 3 s → portal → cambia solo
+el campo de IP de la impresora → Save.
 
 ---
 
@@ -70,25 +101,27 @@ Touch XPT2046 (bus SPI3 / HSPI — no usado en este firmware):
 
 ---
 
-## 3. Configuración WiFi e impresora
+## 3. IP de la impresora — valores por defecto en el código
 
-Abre `EtiquetasCaducidad.ino` y edita el bloque de `#define` al principio:
+Si quieres cambiar los valores que aparecen pre-rellenados en el portal,
+edita en `EtiquetasCaducidad.ino`:
 
 ```cpp
-#define WIFI_SSID    "TuRedWiFi"       // nombre exacto de la red (case-sensitive)
-#define WIFI_PASS    "TuContrasena"    // contraseña WiFi
-#define PRINTER_IP   "192.168.1.100"  // IP de tu impresora térmica de red
-#define PRINTER_PORT 9100             // puerto ESC/POS (por defecto 9100)
+#define PRINTER_IP_DEFAULT   "192.168.1.100"
+#define PRINTER_PORT_DEFAULT "9100"
 ```
+
+Estos son solo los valores iniciales del formulario del portal.
+Una vez guardados desde el portal, los valores en NVS tienen prioridad.
 
 ---
 
-## 4. IP estática (recomendado)
+## 4. IP estática (opcional)
 
-Si el TPV accede a la webapp por URL directa, **es importante que la IP del ESP32
-no cambie** cuando el router renueve las IPs por DHCP.
+Por defecto se usa DHCP (más flexible al cambiar de red). Si el TPV accede
+siempre a la misma URL, conviene fijar una IP estática para el ESP32.
 
-Para activar IP estática, deja el `#define USE_STATIC_IP` descomentado y ajusta:
+Descomenta y ajusta estas líneas en `EtiquetasCaducidad.ino`:
 
 ```cpp
 #define USE_STATIC_IP
@@ -98,8 +131,8 @@ IPAddress subnet  (255, 255, 255,  0);
 IPAddress dns1    (  8,   8,   8,  8);
 ```
 
-> Asegúrate de que `192.168.1.200` no esté ya asignada a otro dispositivo.
-> Si prefieres DHCP, comenta la línea `#define USE_STATIC_IP`.
+> Si cambias de red WiFi (con el portal), recuerda actualizar también la IP
+> estática para que corresponda a la nueva subred.
 
 ---
 
@@ -127,7 +160,9 @@ platform  = espressif32
 board     = esp32dev
 framework = arduino
 monitor_speed = 115200
-lib_deps  = bodmer/TFT_eSPI @ ^2.5.43
+lib_deps  =
+    bodmer/TFT_eSPI @ ^2.5.43
+    tzapu/WiFiManager @ ^2.0.17
 ```
 
 Luego ejecuta `pio run --target upload`.

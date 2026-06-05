@@ -38,6 +38,42 @@ void drawWifiProgress(int pct) {
   if (pct > 0) tft.fillRect(10, 152, 3 * pct, 16, 0x035F);  // azul medio
 }
 
+// ─── drawAPConfigScreen ──────────────────────────────────────────────────────
+// Pantalla que se muestra cuando el ESP32 está en modo AP de configuración WiFi.
+// El usuario debe conectarse al AP indicado y abrir 192.168.4.1 en el navegador.
+void drawAPConfigScreen(const String& apName, const String& apPass) {
+  tft.fillScreen(TFT_BLACK);
+
+  // Cabecera naranja — indica modo configuración
+  tft.fillRect(0, 0, 320, 30, 0xFB00);   // naranja
+  tft.setTextColor(TFT_WHITE, 0xFB00);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString("MODO CONFIGURACION", 160, 15, 2);
+
+  tft.setTextDatum(TL_DATUM);
+
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.drawString("Conectate a esta red WiFi:", 5, 40, 2);
+
+  tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+  tft.drawString(apName, 5, 60, 4);   // nombre AP grande
+
+  if (apPass.length() > 0) {
+    tft.setTextColor(TFT_SILVER, TFT_BLACK);
+    tft.drawString("Clave: " + apPass, 5, 92, 2);
+  }
+
+  tft.drawFastHLine(0, 112, 320, TFT_DARKGREY);
+
+  tft.setTextColor(TFT_CYAN, TFT_BLACK);
+  tft.drawString("Luego abre en el navegador:", 5, 120, 2);
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.drawString("http://192.168.4.1", 5, 140, 2);
+
+  tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
+  tft.drawString("Configura WiFi + IP impresora", 5, 165, 2);
+}
+
 // ─── drawStatusScreen ────────────────────────────────────────────────────────
 // Redibuja la pantalla de estado completa.
 //
